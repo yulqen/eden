@@ -1,4 +1,4 @@
-module gitlab.com/yulqen/eden
+module github.com/yulqen/eden
 
 go 1.17
 

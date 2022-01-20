@@ -6,7 +6,7 @@ import (
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
-	"gitlab.com/yulqen/eden/internal/repository"
+	"github.com/yulqen/eden/internal/repository"
 )
 
 const fileName = "eden.db"
