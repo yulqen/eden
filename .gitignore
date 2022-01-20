@@ -1,0 +1,5 @@
+go.sum
+eden.db
+tags
+testdata/test.db
+internal/testdata/test.db
