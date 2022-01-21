@@ -23,6 +23,16 @@ func mockConfigDir() (string, error) {
 	return testConfigPath, nil
 }
 
+// contains checks whether a str is present in slice s
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
 func TestGetTodayTime(t *testing.T) {
 	// This is a good guide to dates and times in go: https://qvault.io/golang/golang-date-time/
 	// This test mainly tests the Go standard library, which is not what I want, but this
@@ -127,5 +137,64 @@ func TestCanAddJournal(t *testing.T) {
 	if jj.Name != "Work" {
 		t.Error(err)
 	}
+}
 
+func TestGetAllEntries(t *testing.T) {
+	d := testConfigDir()
+
+	defer func() {
+		os.RemoveAll(filepath.Join("/tmp", "CONFIG"))
+	}()
+
+	db, err := sql.Open("sqlite3", filepath.Join(d, dbName))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := NewSQLiteRepository(db)
+
+	err = r.Migrate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	j := Journal{Name: "Work"}
+
+	jj, err := r.CreateJournal(j)
+	if err != nil {
+		t.Error(err)
+	}
+
+	refTime := time.Date(2021, time.April, 10, 15, 0, 0, 0, time.UTC).Format(time.RFC3339)
+	refTime2 := time.Date(2021, time.April, 10, 15, 10, 0, 0, time.UTC).Format(time.RFC3339)
+	refTime3 := time.Date(2021, time.April, 10, 15, 15, 0, 0, time.UTC).Format(time.RFC3339)
+	ent := Entry{Content: "Smash!", Time: refTime, Journal: jj.ID}
+	ent2 := Entry{Content: "Smash 2!", Time: refTime2, Journal: jj.ID}
+	ent3 := Entry{Content: "Smash 3!", Time: refTime3, Journal: jj.ID}
+
+	_, err = r.Create(ent)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = r.Create(ent2)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = r.Create(ent3)
+	if err != nil {
+		t.Error(err)
+	}
+
+	entries, err := r.All()
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := []string{"Smash!", "Smash 2!", "Smash 3!"}
+
+	for _, e := range entries {
+		if contains(expected, e.Content) != true {
+			t.Errorf("%s is not an expected value.", e.Content)
+		}
+	}
 }

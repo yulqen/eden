@@ -132,7 +132,7 @@ func (r *SQLiteRepository) All() ([]Entry, error) {
 	var all []Entry
 	for rows.Next() {
 		var entry Entry
-		if err := rows.Scan(&entry.ID, &entry.Content); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.Time, &entry.Content, &entry.Journal); err != nil {
 			return nil, err
 		}
 		all = append(all, entry)
