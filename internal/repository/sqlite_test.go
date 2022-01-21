@@ -77,8 +77,15 @@ func TestCanAddEntry(t *testing.T) {
 		log.Fatal(err)
 	}
 
+	j := Journal{Name: "Work"}
+
+	jj, err := r.CreateJournal(j)
+	if err != nil {
+		t.Error(err)
+	}
+
 	refTime := time.Date(2021, time.April, 10, 15, 0, 0, 0, time.UTC).Format(time.RFC3339)
-	ent := Entry{Content: "Smash!", Time: refTime}
+	ent := Entry{Content: "Smash!", Time: refTime, Journal: jj.ID}
 
 	retE, err := r.Create(ent)
 	if err != nil {
@@ -90,4 +97,35 @@ func TestCanAddEntry(t *testing.T) {
 	if retE.Time != "2021-04-10T15:00:00Z" {
 		t.Errorf("Expected time to be \"2021-04-10T15:00:00Z\" but got %s", retE.Time)
 	}
+}
+
+func TestCanAddJournal(t *testing.T) {
+	d := testConfigDir()
+	defer func() {
+		os.RemoveAll(filepath.Join("/tmp", "CONFIG"))
+	}()
+
+	db, err := sql.Open("sqlite3", filepath.Join(d, dbName))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := NewSQLiteRepository(db)
+
+	err = r.Migrate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	j := Journal{Name: "Work"}
+
+	jj, err := r.CreateJournal(j)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if jj.Name != "Work" {
+		t.Error(err)
+	}
+
 }

@@ -22,6 +22,17 @@ var (
 	ErrDeleteFailed = errors.New("delete failed")
 )
 
+type Entry struct {
+	ID      int64
+	Time    string
+	Content string
+	Journal int64
+}
+
+type Journal struct {
+	ID   int64
+	Name string
+}
 type SQLiteRepository struct {
 	db *sql.DB
 }
@@ -47,19 +58,50 @@ func NewSQLiteRepository(db *sql.DB) *SQLiteRepository {
 }
 
 func (r *SQLiteRepository) Migrate() error {
+	_, err := r.db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		return err
+	}
 	query := `
+	CREATE TABLE IF NOT EXISTS journals(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL
+	);
 	CREATE TABLE IF NOT EXISTS entries(
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		time TEXT NOT NULL,
-		content TEXT NOT NULL
+		content TEXT NOT NULL,
+		journal_id INTEGER NOT NULL,
+		FOREIGN KEY(journal_id) REFERENCES journals(id)
 	);
 	`
-	_, err := r.db.Exec(query)
+	_, err = r.db.Exec(query)
 	return err
 }
 
+func (r *SQLiteRepository) CreateJournal(journal Journal) (*Journal, error) {
+	res, err := r.db.Exec("INSERT INTO journals(name) values(?)", journal.Name)
+	if err != nil {
+		var sqliteErr sqlite3.Error
+		if errors.As(err, &sqliteErr) {
+			if errors.Is(sqliteErr.ExtendedCode, sqlite3.ErrConstraintUnique) {
+				return nil, ErrDuplicate
+			}
+		}
+		return nil, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+
+	journal.ID = id
+
+	return &journal, nil
+}
+
 func (r *SQLiteRepository) Create(entry Entry) (*Entry, error) {
-	res, err := r.db.Exec("INSERT INTO entries(content, time) values(?,?)", entry.Content, entry.Time)
+	res, err := r.db.Exec("INSERT INTO entries(content, time, journal_id) values(?,?,?)", entry.Content, entry.Time, entry.Journal)
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) {
