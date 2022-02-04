@@ -59,7 +59,9 @@ func TestMockedConfig(t *testing.T) {
 	}
 
 	defer func() {
-		os.RemoveAll(filepath.Join("/tmp", "CONFIG"))
+		if err := os.RemoveAll(filepath.Join("/tmp", "CONFIG")); err != nil {
+			log.Fatal("could not remove temp directory")
+		}
 	}()
 
 	dbpc := NewDBPathChecker(mockConfigDir)
@@ -72,7 +74,9 @@ func TestMockedConfig(t *testing.T) {
 func TestCanAddEntry(t *testing.T) {
 	d := testConfigDir()
 	defer func() {
-		os.RemoveAll(filepath.Join("/tmp", "CONFIG"))
+		if err := os.RemoveAll(filepath.Join("/tmp", "CONFIG")); err != nil {
+			log.Fatal("cannot remove temp directory")
+		}
 	}()
 
 	db, err := sql.Open("sqlite3", filepath.Join(d, dbName))
@@ -112,7 +116,9 @@ func TestCanAddEntry(t *testing.T) {
 func TestCanAddJournal(t *testing.T) {
 	d := testConfigDir()
 	defer func() {
-		os.RemoveAll(filepath.Join("/tmp", "CONFIG"))
+		if err := os.RemoveAll(filepath.Join("/tmp", "CONFIG")); err != nil {
+			log.Fatal("cannot remove temp directory")
+		}
 	}()
 
 	db, err := sql.Open("sqlite3", filepath.Join(d, dbName))
@@ -143,10 +149,13 @@ func TestGetAllEntries(t *testing.T) {
 	d := testConfigDir()
 
 	defer func() {
-		os.RemoveAll(filepath.Join("/tmp", "CONFIG"))
+		if err := os.RemoveAll(filepath.Join("/tmp", "CONFIG")); err != nil {
+			log.Fatal("cannot remove temp directory")
+		}
 	}()
 
 	db, err := sql.Open("sqlite3", filepath.Join(d, dbName))
+
 	if err != nil {
 		t.Fatal(err)
 	}
